@@ -1,0 +1,33 @@
+{
+  "videoId": "sample-video-id",
+  "status": "FINAL_OUTPUT_READY",
+  "input": {
+    "filename": "sample.mp4",
+    "contentType": "video/mp4",
+    "bucketName": "example-bucket",
+    "originalVideoS3Key": "video-transcription/uploads/sample-video-id/sample.mp4"
+  },
+  "transcript": {
+    "original": "Hello, my name is Rujuta. My email is rujuta@example.com. I enjoy reading and movies.",
+    "redacted": "Hello, my name is [NAME]. My email is [EMAIL]. I enjoy reading and movies.",
+    "transcriptS3Key": "video-transcription/transcripts/sample-video-id/transcribe-output.json"
+  },
+  "summary": "- The speaker talks about reading and movies.\n- The transcript was summarized after sensitive details were removed.\n\nOne-sentence summary: The speaker briefly shares personal interests.",
+  "translations": {
+    "en": "Hello, my name is [NAME]. My email is [EMAIL]. I enjoy reading and movies.",
+    "hi": "Sample Hindi translation output.",
+    "mr": "Sample Marathi translation output."
+  },
+  "redactionLog": [
+    { "type": "EMAIL", "count": 1 },
+    { "type": "NAME_SELF_INTRODUCTION", "count": 1 }
+  ],
+  "services": {
+    "transcription": "Amazon Transcribe",
+    "summarization": "Amazon Bedrock: amazon.nova-lite-v1:0",
+    "translation": "Amazon Translate",
+    "storage": "Amazon S3",
+    "jobTracking": "Amazon DynamoDB",
+    "orchestration": "AWS Step Functions"
+  }
+}

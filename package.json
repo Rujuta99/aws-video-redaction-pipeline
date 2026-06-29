@@ -1,0 +1,23 @@
+{
+  "name": "serverless-video-ai-pipeline",
+  "version": "1.0.0",
+  "description": "Serverless multilingual video processing pipeline using AWS Step Functions, Transcribe, Translate, DynamoDB, S3, Lambda, and Amazon Bedrock.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test:redaction": "node tests/redaction-validation.test.mjs",
+    "backfill:dry-run": "node scripts/backfill-archived-media.mjs --limit=1 --dry-run",
+    "backfill:one": "node scripts/backfill-archived-media.mjs --limit=1"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.726.1",
+    "@aws-sdk/client-dynamodb": "^3.726.1",
+    "@aws-sdk/client-s3": "^3.726.1",
+    "@aws-sdk/client-sfn": "^3.726.1",
+    "@aws-sdk/client-transcribe": "^3.726.1",
+    "@aws-sdk/client-translate": "^3.726.1",
+    "@aws-sdk/lib-dynamodb": "^3.726.1",
+    "@aws-sdk/s3-request-presigner": "^3.726.1"
+  },
+  "devDependencies": {}
+}

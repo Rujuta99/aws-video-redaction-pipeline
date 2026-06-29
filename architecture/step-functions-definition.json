@@ -1,0 +1,244 @@
+{
+  "Comment": "5-stage serverless video processing workflow with retries and failure handling. Replace Lambda ARNs before deployment.",
+  "StartAt": "ValidateUpload",
+  "States": {
+    "ValidateUpload": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "REPLACE_WITH_VALIDATE_UPLOAD_LAMBDA_ARN",
+        "Payload.$": "$"
+      },
+      "OutputPath": "$.Payload",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.errorInfo",
+          "Next": "PrepareValidateUploadFailure"
+        }
+      ],
+      "Next": "StartTranscription"
+    },
+    "PrepareValidateUploadFailure": {
+      "Type": "Pass",
+      "Parameters": {
+        "videoId.$": "$.videoId",
+        "failedStage": "ValidateUpload",
+        "errorInfo.$": "$.errorInfo"
+      },
+      "Next": "MarkFailed"
+    },
+    "StartTranscription": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "REPLACE_WITH_START_TRANSCRIPTION_LAMBDA_ARN",
+        "Payload.$": "$"
+      },
+      "OutputPath": "$.Payload",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.errorInfo",
+          "Next": "PrepareStartTranscriptionFailure"
+        }
+      ],
+      "Next": "WaitBeforeCheckingTranscription"
+    },
+    "PrepareStartTranscriptionFailure": {
+      "Type": "Pass",
+      "Parameters": {
+        "videoId.$": "$.videoId",
+        "failedStage": "StartTranscription",
+        "errorInfo.$": "$.errorInfo"
+      },
+      "Next": "MarkFailed"
+    },
+    "WaitBeforeCheckingTranscription": {
+      "Type": "Wait",
+      "Seconds": 30,
+      "Next": "CheckTranscription"
+    },
+    "CheckTranscription": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "REPLACE_WITH_CHECK_TRANSCRIPTION_LAMBDA_ARN",
+        "Payload.$": "$"
+      },
+      "OutputPath": "$.Payload",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.errorInfo",
+          "Next": "PrepareCheckTranscriptionFailure"
+        }
+      ],
+      "Next": "TranscriptionStatusChoice"
+    },
+    "PrepareCheckTranscriptionFailure": {
+      "Type": "Pass",
+      "Parameters": {
+        "videoId.$": "$.videoId",
+        "failedStage": "CheckTranscription",
+        "errorInfo.$": "$.errorInfo"
+      },
+      "Next": "MarkFailed"
+    },
+    "TranscriptionStatusChoice": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.status",
+          "StringEquals": "TRANSCRIPTION_COMPLETED",
+          "Next": "ProcessTranscript"
+        },
+        {
+          "Variable": "$.status",
+          "StringEquals": "TRANSCRIPTION_FAILED",
+          "Next": "PrepareTranscriptionFailed"
+        }
+      ],
+      "Default": "WaitBeforeCheckingTranscription"
+    },
+    "PrepareTranscriptionFailed": {
+      "Type": "Pass",
+      "Parameters": {
+        "videoId.$": "$.videoId",
+        "failedStage": "AmazonTranscribe",
+        "errorInfo": {
+          "Error": "TranscriptionFailed",
+          "Cause": "Amazon Transcribe returned FAILED status"
+        }
+      },
+      "Next": "MarkFailed"
+    },
+    "ProcessTranscript": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "REPLACE_WITH_PROCESS_TRANSCRIPT_LAMBDA_ARN",
+        "Payload.$": "$"
+      },
+      "OutputPath": "$.Payload",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 3,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.errorInfo",
+          "Next": "PrepareProcessTranscriptFailure"
+        }
+      ],
+      "Next": "SaveFinalOutput"
+    },
+    "PrepareProcessTranscriptFailure": {
+      "Type": "Pass",
+      "Parameters": {
+        "videoId.$": "$.videoId",
+        "failedStage": "ProcessTranscript",
+        "errorInfo.$": "$.errorInfo"
+      },
+      "Next": "MarkFailed"
+    },
+    "SaveFinalOutput": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "REPLACE_WITH_SAVE_FINAL_OUTPUT_LAMBDA_ARN",
+        "Payload.$": "$"
+      },
+      "OutputPath": "$.Payload",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.errorInfo",
+          "Next": "PrepareSaveFinalOutputFailure"
+        }
+      ],
+      "End": true
+    },
+    "PrepareSaveFinalOutputFailure": {
+      "Type": "Pass",
+      "Parameters": {
+        "videoId.$": "$.videoId",
+        "failedStage": "SaveFinalOutput",
+        "errorInfo.$": "$.errorInfo"
+      },
+      "Next": "MarkFailed"
+    },
+    "MarkFailed": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "REPLACE_WITH_MARK_FAILED_LAMBDA_ARN",
+        "Payload.$": "$"
+      },
+      "OutputPath": "$.Payload",
+      "End": true
+    }
+  }
+}

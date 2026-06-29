@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Serverless Video AI Pipeline</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f5f7fb;
+      color: #1f2937;
+    }
+    header {
+      padding: 32px;
+      background: #111827;
+      color: white;
+    }
+    main {
+      max-width: 1100px;
+      margin: 24px auto;
+      padding: 0 16px;
+    }
+    .card {
+      background: white;
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+    video {
+      width: 100%;
+      max-height: 420px;
+      border-radius: 12px;
+      background: #000;
+    }
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin: 6px 4px 6px 0;
+      cursor: pointer;
+      background: #2563eb;
+      color: white;
+      font-weight: 600;
+    }
+    button.secondary {
+      background: #4b5563;
+    }
+    pre {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      background: #111827;
+      color: #e5e7eb;
+      padding: 16px;
+      border-radius: 10px;
+      overflow-x: auto;
+    }
+    .meta {
+      color: #6b7280;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Serverless Multilingual Video AI Processing Pipeline</h1>
+    <p>Amazon S3, Lambda, Step Functions, Transcribe, Translate, DynamoDB, and Bedrock.</p>
+  </header>
+
+  <main>
+    <div class="card">
+      <h2>Read-only demo</h2>
+      <p>This site shows curated processed videos. Public upload is intentionally disabled.</p>
+    </div>
+    <section id="videos"></section>
+  </main>
+
+  <script>
+    const API_BASE = "REPLACE_WITH_API_GATEWAY_BASE_URL";
+    const videosContainer = document.getElementById("videos");
+    const finalCache = new Map();
+
+    async function fetchJson(url) {
+      const response = await fetch(url);
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || `Request failed: ${response.status}`);
+      }
+      return response.json();
+    }
+
+    async function getFinal(video) {
+      if (finalCache.has(video.videoId)) return finalCache.get(video.videoId);
+      const data = await fetchJson(`${API_BASE}${video.finalEndpoint}`);
+      finalCache.set(video.videoId, data);
+      return data;
+    }
+
+    function writeOutput(card, value) {
+      const output = card.querySelector("pre");
+      output.textContent = typeof value === "string" ? value : JSON.stringify(value, null, 2);
+    }
+
+    function createButton(label, handler, secondary = false) {
+      const button = document.createElement("button");
+      button.textContent = label;
+      if (secondary) button.classList.add("secondary");
+      button.addEventListener("click", handler);
+      return button;
+    }
+
+    function renderVideo(video) {
+      const card = document.createElement("article");
+      card.className = "card";
+
+      const title = document.createElement("h2");
+      title.textContent = video.title || video.filename || video.videoId;
+
+      const meta = document.createElement("p");
+      meta.className = "meta";
+      meta.textContent = `Status: ${video.status} | Video ID: ${video.videoId}`;
+
+      const player = document.createElement("video");
+      player.controls = true;
+      player.src = video.videoUrl;
+
+      const controls = document.createElement("div");
+      const output = document.createElement("pre");
+      output.textContent = "Choose a button to view processed output.";
+
+      controls.append(
+        createButton("Summary", async () => writeOutput(card, (await getFinal(video)).summary)),
+        createButton("Redacted transcript", async () => writeOutput(card, (await getFinal(video)).transcript.redacted)),
+        createButton("English", async () => writeOutput(card, (await getFinal(video)).translations.en), true),
+        createButton("Hindi", async () => writeOutput(card, (await getFinal(video)).translations.hi), true),
+        createButton("Marathi", async () => writeOutput(card, (await getFinal(video)).translations.mr), true),
+        createButton("Redaction log", async () => writeOutput(card, (await getFinal(video)).redactionLog), true),
+        createButton("Services used", async () => writeOutput(card, (await getFinal(video)).services), true)
+      );
+
+      card.append(title, meta, player, controls, output);
+      videosContainer.appendChild(card);
+    }
+
+    async function loadVideos() {
+      try {
+        const data = await fetchJson(`${API_BASE}/videos`);
+        videosContainer.innerHTML = "";
+        if (!data.videos || data.videos.length === 0) {
+          videosContainer.innerHTML = '<div class="card">No demo videos configured yet.</div>';
+          return;
+        }
+        data.videos.forEach(renderVideo);
+      } catch (error) {
+        videosContainer.innerHTML = `<div class="card"><h2>Error</h2><pre>${error.message}</pre></div>`;
+      }
+    }
+
+    loadVideos();
+  </script>
+</body>
+</html>

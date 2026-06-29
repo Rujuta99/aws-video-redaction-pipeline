@@ -1,0 +1,17 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "StartVideoProcessingWorkflow",
+      "Effect": "Allow",
+      "Action": "states:StartExecution",
+      "Resource": "arn:aws:states:REGION:ACCOUNT_ID:stateMachine:video-processing-workflow"
+    },
+    {
+      "Sid": "UpdateVideoJobs",
+      "Effect": "Allow",
+      "Action": "dynamodb:UpdateItem",
+      "Resource": "arn:aws:dynamodb:REGION:ACCOUNT_ID:table/VideoPost"
+    }
+  ]
+}
