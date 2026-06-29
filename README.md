@@ -328,22 +328,4 @@ http://localhost:8000
 
 For hosting, upload `frontend/index.html` to a separate S3 static website bucket. Keep the media bucket private. The frontend receives temporary pre-signed video URLs from the demo API.
 
-## Security notes
 
-- Do not commit AWS credentials, `.env`, `.pem`, API keys, videos, or pre-signed URLs.
-- Keep the media bucket private.
-- Use the read-only demo API whitelist through `DEMO_VIDEO_IDS`.
-- Rotate any API key or credential that was pasted into logs or commits.
-- Use budget alerts before large S3 archive tests.
-
-## Resume-ready project summary
-
-```text
-Built a 5-stage serverless video-processing workflow using AWS Step Functions, Lambda, S3, DynamoDB, Amazon Transcribe, Amazon Translate, and Amazon Bedrock to generate transcripts, AI summaries, redacted outputs, and Hindi/Marathi translations from uploaded videos.
-
-Scaled the pipeline for event-driven near-real-time uploads and archived media backfills using S3 event notifications, retryable Step Functions stages, DynamoDB-based job tracking, failure logging, and a seeded validation suite of 120+ test cases for PII redaction and profanity filtering.
-```
-
-## Notes
-
-The current transcription configuration assumes English audio using `TRANSCRIBE_LANGUAGE_CODE=en-US`. The pipeline translates the English transcript into Hindi and Marathi. To transcribe Hindi or Marathi speech directly, update the Transcribe language configuration and testing strategy.
